@@ -215,15 +215,98 @@ const pokemonsSlice = createSlice({
   },
 });
 ```
-Para leer de localStorage 
+
+Para leer de localStorage
 
 ```js
 // leer del localStorage
-const getInitialState = (): PokemonsState=>{
-  const favorites = JSON.parse(localStorage.getItem('favorite-pokemons') ?? '{}');
+const getInitialState = (): PokemonsState => {
+  const favorites = JSON.parse(
+    localStorage.getItem("favorite-pokemons") ?? "{}"
+  );
 
-  return favorite;  
-}
+  return favorite;
+};
 ```
 
-Ese doble signo de pregunta (??) sirve para que cuando inicializamos el localStorage y no tengamos aun nada guardado  que lo inicialice como un objeto vacio.
+Ese doble signo de pregunta (??) sirve para que cuando inicializamos el localStorage y no tengamos aun nada guardado que lo inicialice como un objeto vacio.
+
+### Redux Toolkit - Middlewares
+
+Un _middleware_ es una función que se coloca entre las acciones y los reducers, permitiendo interceptar, modificar, o realizar tareas adicionales en el flujo de las acciones antes de que lleguen al reducer.
+
+Nosotros podemos ejecutar una acción o un efecto secundario cuando nuestro store cambia.
+
+En definitiva son funciones que se ejecutan en un punto determinado del tiempo para:
+
+- controlar efectos secundarios,
+- registrar o depurar acciones o
+- aplicar lógica personalizada.
+
+#### Pasos para crear un _Custom Middleware_
+
+1. Creamos dentro de la carpeta _store_ una nueva carpeta llamada _middleware_.
+
+2. Dentro de la carpeta _middleware_ vamos a crear un archivo en este caso _localstorage-middleware.ts_
+
+3. Inicializamos el archivo _localstorage-middleware_:
+
+```js
+import { MiddlewareAPI } from "@reduxjs/toolkit";
+
+export const localStorageMiddleware = (state: MiddlewareAPI) => {};
+```
+
+4. Middleware necesita retornar una función que a su vez regresa otra función:
+   (next: Dispatch) => esto es la función que queremos despachar. Es decir, cuando nosotros lo mandemos a llamar, el middleware lo va a interceptar y esta es la función dispatch que se va a ejecutar.
+
+(accion: Action) => Esta seria la acción que se va a ejecutar.
+
+```js
+import { Action, Dispatch, MiddlewareAPI } from "@reduxjs/toolkit";
+
+export const localStorageMiddleware = (state: MiddlewareAPI) => {
+  return (next: Dispatch) => (action: Action) => {};
+};
+```
+
+5. Nos vamos a la parte de nuestro _index.ts_ en el store y agregamos:
+
+```js
+export const store = configureStore({
+  reducer: {
+    counter: counterReducer,
+    pokemons: pokemonsReducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(localStorageMiddleware),
+});
+```
+
+Se agrega la función getDefaultMiddleware se la llama a la función getDefaultMiddleware se concatena con la función custom Middleware que hicimos nosotros.
+
+6. Por ultimo tenemos que llamar la acción y hacer nuestra condición
+
+```js
+import { Action, Dispatch, MiddlewareAPI } from "@reduxjs/toolkit";
+import { RootState } from "..";
+
+export const localStorageMiddleware = (state: MiddlewareAPI)=>{
+    return(next: Dispatch)=> (action: Action)=>{
+        // para despachar la acción
+        next(action)
+        if (action.type === 'pokemons/toggleFavorite'){
+            const {pokemons} = state.getState() as RootState;
+            localStorage.setItem('favorite-pokemons', JSON.stringify(pokemons));
+            return;
+        }
+        // console.log({state: state.getState()});
+    }
+}
+```
+Explicación:  
+- Dispara la acción con  next(action), 
+- Si el action.type es name/reducer (pokemons/toggleFavorite) ejecuta lo siguiente: 
+- En una constante vamos a extraer con state.getState => los pokemons.
+Nota: el *as RootState* simplemente es para poder tener las opciones dentro de las llaves de la extracción.
+- y en el localstorage hacemos el set.  
