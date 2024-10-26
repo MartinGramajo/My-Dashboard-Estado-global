@@ -114,8 +114,8 @@ const pokemonsSlice = createSlice({
       } else {
         state[id] = pokemon;
       }
-    }
-  }
+    },
+  },
 });
 
 export const { toggleFavorite } = pokemonsSlice.actions;
@@ -180,3 +180,50 @@ export const Nofavorites = () => {
   );
 };
 ```
+
+### Almacenar en localStorage
+
+Podemos guardar la lista de favoritos en 3 lugares:
+
+1. localStorage: nunca sale de la computadora y es un espacio reservado por url o dominio. Al reiniciar la pc no se pierden los datos.
+
+2. SessionStorage: Se mantiene unicamente mientras tengamos una instancia, una ventana de google chrome abierta. Pero si cerramos esa ventana o reiniciamos perdemos los datos guardados.
+
+3. Cookies: es muy similar al localStorage por su persistencia durante un tiempo. Las cookies siempre viajan por peticiones http.
+
+Todo esto es del lado del cliente: Esta primera forma de guardar en localStorage sin embargo NO SE DEBE HACER EN REDUX en solo para finalidades de entender el proceso de guardado:
+
+```js
+const pokemonsSlice = createSlice({
+  name: "pokemons",
+  initialState,
+  reducers: {
+    toggleFavorite(state, action: PayloadAction<SimplePokemon>) {
+      const pokemon = action.payload;
+      const { id } = pokemon;
+
+      if (!!state[id]) {
+        delete state[id];
+        // return;
+      } else {
+        state[id] = pokemon;
+      }
+
+      // TODO: No se debe de hacer en redux de esta forma es solo para finalidad de entendimiento
+      localStorage.setItem("favorite-pokemons", JSON.stringify(state));
+    },
+  },
+});
+```
+Para leer de localStorage 
+
+```js
+// leer del localStorage
+const getInitialState = (): PokemonsState=>{
+  const favorites = JSON.parse(localStorage.getItem('favorite-pokemons') ?? '{}');
+
+  return favorite;  
+}
+```
+
+Ese doble signo de pregunta (??) sirve para que cuando inicializamos el localStorage y no tengamos aun nada guardado  que lo inicialice como un objeto vacio.
