@@ -304,9 +304,48 @@ export const localStorageMiddleware = (state: MiddlewareAPI)=>{
     }
 }
 ```
-Explicación:  
-- Dispara la acción con  next(action), 
-- Si el action.type es name/reducer (pokemons/toggleFavorite) ejecuta lo siguiente: 
+
+Explicación:
+
+- Dispara la acción con next(action),
+- Si el action.type es name/reducer (pokemons/toggleFavorite) ejecuta lo siguiente:
 - En una constante vamos a extraer con state.getState => los pokemons.
-Nota: el *as RootState* simplemente es para poder tener las opciones dentro de las llaves de la extracción.
-- y en el localstorage hacemos el set.  
+  Nota: el _as RootState_ simplemente es para poder tener las opciones dentro de las llaves de la extracción.
+- y en el localstorage hacemos el set.
+
+### LocalStorage build time error
+
+Se generaba un error a la hora de hacer el build por el hecho de no estar definido 'localStorage' en esta función:
+
+```js
+// leer del localStorage
+
+const getInitialState = (): PokemonsState => {
+  const favorites = JSON.parse(
+    localStorage.getItem("favorite-pokemons") ?? "{}"
+  );
+  return favorites;
+};
+```
+
+##### Como lo resolvemos?
+
+Mediante un useEffect, llamamos a la función una vez que este montado el build de la app.
+
+Soluciones:
+
+1. Solución rápida: Aunque esta solución nos daría problemas en desarrollo porque nos tira un error a la hora del renderizado.
+Prácticamente el contenido no hace match con lo generado en el lado del servidor y que hubo un problema con la hidratación.
+
+```js
+// leer del localStorage
+const getInitialState = (): PokemonsState => {
+  if (typeof localStorage === "undefined") return {};
+
+  const favorites = JSON.parse(
+    localStorage.getItem("favorite-pokemons") ?? "{}"
+  );
+  return favorites;
+};
+```
+typeof localStorage === "undefined" => Esta condición hace que cuando se ejecute el build, al retornar un false, nos permite pasarla y que se pueda hacer el build. 
