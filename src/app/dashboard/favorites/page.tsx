@@ -1,6 +1,7 @@
 import FavoritePokemons from "@/app/pokemons/components/FavoritePokemons";
 
 
+
 export const metadata = {
  title: 'Favoritos',
  description: 'Listado de pokemons',
@@ -18,6 +19,14 @@ export default async function FavoritesPokemonsPage() {
         Listado de Pokemons <small className="text-red-600"> Global State</small>
       </span>
       <FavoritePokemons />
+
     </div>
   );
 }
+
+
+
+
+
+
+

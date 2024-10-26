@@ -144,6 +144,39 @@ const onToggle = () => {
 </div>;
 ```
 
-### Tarea: Pagina de favoritos 
+### Tarea: Pagina de favoritos
 
-Agregar en la pagina de favoritos la lista de los pokemons utilizando el store. 
+Agregar en la pagina de favoritos la lista de los pokemons utilizando el store.
+
+### Mantener favoritos
+
+Haciendo uso del useState hacemos la persistencia de la pagina y agregamos lógica condicional para mostrar si hay pokemonsFavorites o el component noFavorites:
+
+```js
+const FavoritePokemons = () => {
+  const favoritePokemons = useAppSelector((state) =>
+    Object.values(state.pokemons)
+  );
+
+  const [pokemons, setPokemons] = useState(favoritePokemons || []);
+
+  return (
+    <div>
+      {pokemons.length === 0 ? (
+        <Nofavorites />
+      ) : (
+        <PokemonGrid pokemons={pokemons} />
+      )}
+    </div>
+  );
+};
+
+export const Nofavorites = () => {
+  return (
+    <div className="flex flex-col h-[50vh] items-center justify-center">
+      <IoHeartOutline size={100} className="text-red-500" />
+      <span>No hay favoritos</span>
+    </div>
+  );
+};
+```
