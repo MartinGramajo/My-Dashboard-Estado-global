@@ -94,3 +94,56 @@ let result = !!value;
 // segunda negación convierte true a false
 console.log(result); // false
 ```
+
+### Toggle Favorite
+
+1. En el archivo pokemons.ts agregamos el reducer toggleFavorite para agregar favoritos:
+
+```js
+const pokemonsSlice = createSlice({
+  name: "pokemons",
+  initialState,
+  reducers: {
+    toggleFavorite(state, action: PayloadAction<SimplePokemon>) {
+      const pokemon = action.payload;
+      const { id } = pokemon;
+
+      if (!!state[id]) {
+        delete state[id];
+        return;
+      } else {
+        state[id] = pokemon;
+      }
+    }
+  }
+});
+
+export const { toggleFavorite } = pokemonsSlice.actions;
+```
+
+2. En el archivo PokemonCard.tsx vamos a utilizar nuestro dispatch
+
+```js
+const onToggle = () => {
+  dispatch(toggleFavorite(pokemon));
+};
+
+<div
+  className="px-4 py-2 hover:bg-gray-100 flex items-center cursor-pointer"
+  onClick={onToggle}
+>
+  <div className="text-red-600">
+    {isFavorite ? <IoHeart className="text-red-600" /> : <IoHeartOutline />}
+  </div>
+  <div className="pl-3">
+    <p className="text-sm font-medium text-gray-800 leading-none">
+      {isFavorite ? "Es favorito" : "No es favorito"}
+    </p>
+    <p className="text-xs text-gray-500">Click para cambiar</p>
+  </div>
+</div>;
+```
+
+### Tarea: Pagina de favoritos 
+
+Agregar en la pagina de favoritos la lista de los pokemons utilizando el store. 
