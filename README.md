@@ -335,7 +335,7 @@ Mediante un useEffect, llamamos a la función una vez que este montado el build 
 Soluciones:
 
 1. Solución rápida: Aunque esta solución nos daría problemas en desarrollo porque nos tira un error a la hora del renderizado.
-Prácticamente el contenido no hace match con lo generado en el lado del servidor y que hubo un problema con la hidratación.
+   Prácticamente el contenido no hace match con lo generado en el lado del servidor y que hubo un problema con la hidratación.
 
 ```js
 // leer del localStorage
@@ -348,4 +348,128 @@ const getInitialState = (): PokemonsState => {
   return favorites;
 };
 ```
-typeof localStorage === "undefined" => Esta condición hace que cuando se ejecute el build, al retornar un false, nos permite pasarla y que se pueda hacer el build. 
+
+typeof localStorage === "undefined" => Esta condición hace que cuando se ejecute el build, al retornar un false, nos permite pasarla y que se pueda hacer el build.
+
+### Server components + LocalStorage
+
+_Esta solución seria el modo correcto para evitar el error a la hora del build_
+
+En este caso lo que haremos seria cambiar nuestro _PokemonsState_ :
+
+De esto
+
+```js
+{
+  '1':{ id: '1', name: 'bulbasaur'},
+  '2':{ id: '1', name: 'bulbasaur'},
+}
+```
+
+a esto
+
+```js
+favorites: {{
+  '1':{ id: '1', name: 'bulbasaur'},
+  '2':{ id: '1', name: 'bulbasaur'},
+}}
+```
+
+Por ende tenemos que modificar:
+
+```js
+interface PokemonsState {
+  favorites: { [key: string]: SimplePokemon };
+}
+```
+
+Como agregamos un cambio en nuestro store tenemos que buscar todos los lugares de nuestro código donde lo utilicemos, es decir, donde tengamos nuestro _state.pokemons_ y agregarle la propiedad _favorites_.
+
+Ahora para lograr la persistencia tenemos que cargar los pokemons en algún sitio, en este caso lo haremos en nuestro _PROVIDERS_. Para ellos tenemos que crear un nuevo reducers:
+
+```js
+setFavoritePokemons(state, action:PayloadAction<{[key: string]: SimplePokemon;}>){
+    },
+```
+
+_Nota: destaco esta forma de tipado que directamente le pasa lo que espera recibir la función en lugar de la interface pokemonState._
+
+Ahora si terminamos con el reducer:
+
+```js
+const pokemonsSlice = createSlice({
+  name: "pokemons",
+  initialState,
+  reducers: {
+    setFavoritePokemons(
+      state,
+      action: PayloadAction<{ [key: string]: SimplePokemon }>
+    ) {
+      state.favorites = action.payload;
+    },
+  },
+});
+
+export const { setFavoritePokemons } = pokemonsSlice.actions;
+```
+
+En el _providers_ :
+
+```js
+const Providers = ({ children }: Props) => {
+  // carga inicial de los pokemons
+  useEffect(() => {
+    const favorites = JSON.parse(
+      localStorage.getItem("favorite-pokemons") ?? "{}"
+    );
+    console.log(favorites);
+    store.dispatch(setFavoritePokemons(favorites));
+  }, []);
+  return <Provider store={store}>{children}</Provider>;
+};
+
+export default Providers;
+```
+
+Por ultimo hacemos la siguiente modificación en el _FavoritesPokemons.tsx_ en favoritePokemons: 
+
+```js
+"use client";
+import PokemonGrid from "@/app/pokemons/components/PokemonGrid";
+import { useAppSelector } from "@/store";
+import React, { useEffect, useState } from "react";
+import { IoHeartOutline } from "react-icons/io5";
+
+const FavoritePokemons = () => {
+  const favoritePokemons = useAppSelector((state) =>
+    Object.values(state.pokemons.favorites)
+  );
+
+  const [pokemons, setPokemons] = useState(favoritePokemons);
+
+  useEffect(() => {
+    // setPokemons(favoritePokemons);
+  }, [favoritePokemons]);
+
+  return (
+    <div>
+      {favoritePokemons.length === 0 ? (
+        <Nofavorites />
+      ) : (
+        <PokemonGrid pokemons={favoritePokemons} />
+      )}
+    </div>
+  );
+};
+
+export default FavoritePokemons;
+
+export const Nofavorites = () => {
+  return (
+    <div className="flex flex-col h-[50vh] items-center justify-center">
+      <IoHeartOutline size={100} className="text-red-500" />
+      <span>No hay favoritos</span>
+    </div>
+  );
+};
+```
